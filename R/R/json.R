@@ -179,7 +179,7 @@ robyn_write <- function(InputCollect,
         ret[["OutputCollect"]][["all_sols"]] <- pareto_df
       }
     }
-    write_json(ret, filename, pretty = TRUE, digits = 10)
+    write_json(ret, filename, pretty = TRUE, digits = 20)
   }
   return(invisible(ret))
 }
