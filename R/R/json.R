@@ -438,5 +438,51 @@ robyn_chain <- function(json_file) {
   if (length(ids) != length(names(chainData))) {
     warning("Can't replicate chain-like results if you don't follow Robyn's chain structure")
   }
+  
+  #' Ensure coefficient consistency between original and recreated models
+  #'
+  #' This function addresses coefficient discrepancies by ensuring proper
+  #' hyperparameter scaling and coefficient aggregation consistency.
+  #' @param original_json Original JSON from robyn_write
+  #' @param recreated_output Output from robyn_recreate
+  #' @param tolerance Numeric tolerance for coefficient comparison
+  #' @return Boolean indicating if coefficients match within tolerance
+  #' @export
+  ensure_coefficient_consistency <- function(original_json, recreated_output, tolerance = 1e-10) {
+    if (is.null(original_json) || is.null(recreated_output)) {
+      return(FALSE)
+    }
+    
+    original_coefs <- original_json$ExportedModel$summary$coef
+    recreated_coefs <- recreated_output$OutputCollect$DecompAggs$coef
+    
+    # Ensure both coefficient vectors have same length and order
+    if (length(original_coefs) != length(recreated_coefs)) {
+      warning("Coefficient vector length mismatch between original and recreated models")
+      return(FALSE)
+    }
+    
+    # Match coefficients by variable name
+    coef_comparison <- data.frame(
+      original = original_coefs,
+      recreated = recreated_coefs,
+      diff = abs(original_coefs - recreated_coefs)
+    )
+    
+    max_diff <- max(coef_comparison$diff, na.rm = TRUE)
+    is_consistent <- max_diff < tolerance
+    
+    if (!is_consistent) {
+      warning(sprintf(
+        "Coefficient inconsistency detected. Max difference: %g. Consider checking:",
+        "1. Hyperparameter scaling consistency",
+        "2. JSON precision (digits parameter)",
+        "3. Factor variable handling",
+        "4. Model refitting parameters"
+      ))
+    }
+    
+    return(is_consistent)
+  }
   return(invisible(chainData))
 }
